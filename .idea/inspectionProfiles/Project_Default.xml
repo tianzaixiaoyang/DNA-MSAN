@@ -1,0 +1,87 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="DuplicatedCode" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <Languages>
+        <language minSize="1173" name="Python" />
+      </Languages>
+    </inspection_tool>
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="26">
+            <item index="0" class="java.lang.String" itemvalue="tqdm" />
+            <item index="1" class="java.lang.String" itemvalue="pandas" />
+            <item index="2" class="java.lang.String" itemvalue="scipy" />
+            <item index="3" class="java.lang.String" itemvalue="networkx" />
+            <item index="4" class="java.lang.String" itemvalue="scikit_learn" />
+            <item index="5" class="java.lang.String" itemvalue="dgl" />
+            <item index="6" class="java.lang.String" itemvalue="torch" />
+            <item index="7" class="java.lang.String" itemvalue="numpy" />
+            <item index="8" class="java.lang.String" itemvalue="absl-py" />
+            <item index="9" class="java.lang.String" itemvalue="pbr" />
+            <item index="10" class="java.lang.String" itemvalue="protobuf" />
+            <item index="11" class="java.lang.String" itemvalue="decorator" />
+            <item index="12" class="java.lang.String" itemvalue="six" />
+            <item index="13" class="java.lang.String" itemvalue="Werkzeug" />
+            <item index="14" class="java.lang.String" itemvalue="funcsigs" />
+            <item index="15" class="java.lang.String" itemvalue="astor" />
+            <item index="16" class="java.lang.String" itemvalue="gast" />
+            <item index="17" class="java.lang.String" itemvalue="futures" />
+            <item index="18" class="java.lang.String" itemvalue="tensorflow" />
+            <item index="19" class="java.lang.String" itemvalue="tensorboard" />
+            <item index="20" class="java.lang.String" itemvalue="backports.weakref" />
+            <item index="21" class="java.lang.String" itemvalue="mock" />
+            <item index="22" class="java.lang.String" itemvalue="grpcio" />
+            <item index="23" class="java.lang.String" itemvalue="enum34" />
+            <item index="24" class="java.lang.String" itemvalue="Markdown" />
+            <item index="25" class="java.lang.String" itemvalue="evalne" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPep8Inspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredErrors">
+        <list>
+          <option value="W191" />
+          <option value="E101" />
+          <option value="E501" />
+          <option value="E731" />
+          <option value="W605" />
+          <option value="E122" />
+          <option value="E402" />
+          <option value="E225" />
+          <option value="E266" />
+          <option value="E128" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPep8NamingInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredErrors">
+        <list>
+          <option value="N806" />
+          <option value="N802" />
+          <option value="N803" />
+          <option value="N812" />
+          <option value="N801" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyShadowingBuiltinsInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredNames">
+        <list>
+          <option value="eval" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="list.test_scores" />
+          <option value="dict.*" />
+          <option value="list.*" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
