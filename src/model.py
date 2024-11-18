@@ -27,7 +27,7 @@ from src.EvalNE.evalne.utils import split_train_test as stt
 from src.EvalNE.evalne.utils.viz_utils import *
 
 
-class graphGAN(object):
+class DNA_MSAN(object):
     def __init__(self):
         print("reading graphs...")
 
@@ -50,12 +50,7 @@ class graphGAN(object):
         all_edges_adjacency = utils.lists_to_matrix(self.n_node, all_edges)
         all_edges_adjacency = all_edges_adjacency - np.diag(np.diag(all_edges_adjacency))
 
-        all_edges_motifAdjacency = Motif_Adjacency.MotifAdjacency(all_edges_adjacency, "M4") + Motif_Adjacency.MotifAdjacency(all_edges_adjacency, "M13")
-        if config.self_loop:
-            MSAN_weighted = all_edges_motifAdjacency + np.eye(self.n_node)
-        else:
-            MSAN_weighted = all_edges_motifAdjacency
-
+        MSAN_weighted = Motif_Adjacency.MotifAdjacency(all_edges_adjacency, "M4") + Motif_Adjacency.MotifAdjacency(all_edges_adjacency, "M13")
         self.normal_MSAN_weighted = utils.normal_matrix(MSAN_weighted)
 
         self.MSAN_neighbors = utils.matrix_to_lists(MSAN_weighted)
@@ -116,44 +111,10 @@ class graphGAN(object):
 
         # construct BFS-tree
         self.trees = None
-        if os.path.isfile(config.cache_filename):
-            print("reading BFS-trees from cache...")
-            pickle_file = open(config.cache_filename, 'rb')
-            self.trees = pickle.load(pickle_file)
-            pickle_file.close()
-        else:
-            print("constructing BFS-trees...")
-            pickle_file = open(config.cache_filename, 'wb')
-            if config.local_graph_softmax:
-                self.trees = self.construct_trees(self.root_nodes)
-            else:
-                self.trees = self.construct_trees_all(self.root_nodes)
-            pickle.dump(self.trees, pickle_file)
-            pickle_file.close()
-
-    def construct_trees_with_mp(self, nodes):
-        """use the multiprocessing to speed up trees construction
-
-        Args:
-            nodes: the list of nodes in the graph
-        """
-        cores = multiprocessing.cpu_count() // 2  
-        pool = multiprocessing.Pool(cores)
-        new_nodes = []
-        n_node_per_core = self.n_node // cores
-        for i in range(cores):
-            if i != cores - 1:
-                new_nodes.append(nodes[i * n_node_per_core: (i + 1) * n_node_per_core])
-            else:
-                new_nodes.append(nodes[i * n_node_per_core:])
-        trees = {}
-        trees_result = pool.map(self.construct_trees, new_nodes)
-        for tree in trees_result:
-            trees.update(tree)
-        return trees
+        print("constructing BFS-trees with local graph softmax...")
+        self.trees = self.construct_trees(self.root_nodes)
 
     def construct_trees(self, nodes, d=config.BFS_depth):
-
         trees = {}
         for root in tqdm.tqdm(nodes):
             trees[root] = {}  
@@ -178,32 +139,6 @@ class graphGAN(object):
                             used_nodes.add(sub_node)
         return trees
 
-    def construct_trees_all(self, nodes):
-        """use BFS algorithm to construct the BFS-trees
-
-        Args:
-            nodes: the list of nodes in the graph
-        Returns:
-            trees: dict, root_node_id -> tree, where tree is a dict: node_id -> list: [father, child_0, child_1, ...]
-        """
-
-        trees = {}
-        for root in tqdm.tqdm(nodes):
-            trees[root] = {}
-            trees[root][root] = [root]
-            used_nodes = set()
-            queue = collections.deque([root])
-            while len(queue) > 0:
-                cur_node = queue.popleft()
-                used_nodes.add(cur_node)
-                for sub_node in self.graph[cur_node]:
-                    if sub_node not in used_nodes:
-                        trees[root][cur_node].append(sub_node)
-                        trees[root][sub_node] = [cur_node]
-                        queue.append(sub_node)
-                        used_nodes.add(sub_node)
-        return trees
-
     def prepare_data_for_d(self):
         """generate positive and negative samples for the discriminator, and record them in the txt file"""
         print("preparing data for  discriminator...")
@@ -224,6 +159,15 @@ class graphGAN(object):
                     center_nodes.extend([i] * len(neg_BFS))
                     neighbor_nodes.extend(neg_BFS)
                     labels.extend([0] * len(neg_BFS))
+
+                neg_newMCNS = self.new_mcns_negative_sampling(i, pos, self.candidates, self.q_1_dict)
+                # generate negative samples by the improved MCNS
+                for neg in neg_newMCNS:
+                    if neg in pos:
+                        neg_newMCNS.remove(neg)
+                center_nodes.extend([i] * len(neg_newMCNS))
+                neighbor_nodes.extend(neg_newMCNS)
+                labels.extend([0] * len(neg_newMCNS))
 
         return center_nodes, neighbor_nodes, labels
 
@@ -333,5 +277,3 @@ class graphGAN(object):
             with open(config.emb_filenames[i], "w+") as f:
                 lines = [str(self.n_node) + "\t" + str(config.n_emb) + "\n"] + embedding_str
                 f.writelines(lines)
-
-   
