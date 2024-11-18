@@ -28,17 +28,22 @@ num_feats = [7842, 3703, 1433, 2405][dataset_num]
 directed = [False, False, False, True][dataset_num]
 delimiter = ["\t", "\t", "\t", " "][dataset_num]
 
-lp_train_frac = 0.7
-self_loop = False
+lp_train_frac = 0.7  # The training ratio for link prediction
+self_loop = False  # Whether self-loops are included when aggregating neighborhood information.
+
+# Whether using the local graph softmax strategy.
 local_graph_softmax = True
 BFS_depth = 2
-# project path
-project_path = "/home/teach/ying/DNA-MSAN/"
 
+# project path
+project_path = "/home/teach/DNA-MSAN/"
+
+# The paths to the original edge set, attribute matrix, and labels.
 org_edges_filename = project_path + "data/" + dataset + "/" + dataset + ".cites"
 org_feature_filename = project_path + "data/" + dataset + "/" + dataset + ".content"
 org_labels_filename = project_path + "data/" + dataset + "/" + dataset + ".labels"
 
+# The paths to the edge set and attribute matrix after preprocessing with EvalNE.
 output_filename = project_path + "data/" + dataset + "/output/"
 new_edges_filename = output_filename + dataset + "_pre.cites"
 
