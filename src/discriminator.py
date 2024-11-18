@@ -45,9 +45,7 @@ class MSAN(nn.Module):
     def aggregate(self, nodes):
 
         nodes_neighbors, node2index, unique_nodes_list = self._get_unique_neighs_list(nodes)
-
         assert len(nodes) == len(nodes_neighbors) 
-
         indicator = [(nodes[i] in nodes_neighbors[i]) for i in range(len(nodes_neighbors))]
         assert (False not in indicator)
 
@@ -55,7 +53,6 @@ class MSAN(nn.Module):
             nodes_neighbors = [(nodes_neighbors[i] - {nodes[i]}) for i in range(len(nodes_neighbors))]
 
         embed_matrix = self.raw_features[torch.LongTensor(unique_nodes_list)]
-
         mask = torch.zeros(len(nodes_neighbors), len(node2index))
 
         column_indices = [node2index[n] for nodes_neighbor in nodes_neighbors for n in nodes_neighbor]
@@ -86,7 +83,6 @@ class Discriminator(nn.Module):
         self.MSAN = MSAN(input_dim, output_dim, self.features, self.adj_lists, self.normal_MSAN_weighted)
 
         self.embedding_matrix = None
-
         self.node_embedding = None
         self.node_neighbor_embedding = None
         self.neighbor_bias = None
