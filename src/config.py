@@ -16,7 +16,6 @@ n_epochs_dis = 30  # number of inner loops for the discriminator
 
 # other hyper-parameters
 n_emb = 128
-multi_processing = False  # whether using multi-processing to construct BFS-trees
 window_size = 2  
 
 # application and dataset settings
@@ -29,10 +28,8 @@ directed = [False, False, False, True][dataset_num]
 delimiter = ["\t", "\t", "\t", " "][dataset_num]
 
 lp_train_frac = 0.7  # The training ratio for link prediction
-self_loop = False  # Whether self-loops are included when aggregating neighborhood information.
 
-# Whether using the local graph softmax strategy.
-local_graph_softmax = True
+# The depth of the local graph softmax
 BFS_depth = 2
 
 # project path
@@ -51,17 +48,6 @@ lp_train_filename = project_path + "data/" + dataset + "/train_test_split/" + "t
 lp_test_filename = project_path + "data/" + dataset + "/train_test_split/" + "teE_0.csv"
 lp_test_neg_filename = project_path + "data/" + dataset + "/train_test_split/" + "negTeE_0.csv"
 labels_filename = project_path + "data/" + dataset + "/" + dataset + ".labels"
-
-if app == "link_prediction":
-    if local_graph_softmax:
-        cache_filename = project_path + "cache/" + app + "/" + dataset + "_lgs_" + str(lp_train_frac) + ".pkl"
-    else:
-        cache_filename = project_path + "cache/" + app + "/" + dataset + "_gs_" + str(lp_train_frac) + ".pkl"
-else:
-    if local_graph_softmax:
-        cache_filename = project_path + "cache/" + app + "/" + dataset + "_lgs" + ".pkl"
-    else:
-        cache_filename = project_path + "cache/" + app + "/" + dataset + "_gs" + ".pkl"
 
 train_test_split = project_path + "data/" + dataset + "/train_test_split/"
 
