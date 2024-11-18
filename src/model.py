@@ -112,9 +112,9 @@ class DNA_MSAN(object):
         # construct BFS-tree
         self.trees = None
         print("constructing BFS-trees with local graph softmax...")
-        self.trees = self.construct_trees(self.root_nodes)
+        self.trees = self.construct_trees(self.root_nodes, config.BFS_depth)
 
-    def construct_trees(self, nodes, d=config.BFS_depth):
+    def construct_trees(self, nodes, d):
         trees = {}
         for root in tqdm.tqdm(nodes):
             trees[root] = {}  
