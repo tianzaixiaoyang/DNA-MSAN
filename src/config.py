@@ -68,5 +68,3 @@ train_detail_filename = [results_path + "gen_detail_" + ".txt",
                          results_path + "dis_detail_" + ".txt"]
 emb_filenames = [results_path + dataset + "_gen_" + ".emb",
                  results_path + dataset + "_dis_" + ".emb"]
-
-time_filename = results_path + "epoch_time.txt"
