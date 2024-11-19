@@ -172,60 +172,34 @@ def construct_graph(edges):
 
 
 def EvalEN(model, epoch, method_name, edge_embed_method='hadamard'):
-    return_val = 0
     gen_embedding_matrix = model.generator.embedding_matrix.detach()
     index_node = np.arange(gen_embedding_matrix.shape[0]).astype(np.str).tolist()
     Xgen = dict(zip(index_node, gen_embedding_matrix))
-    dis_embedding_matrix = model.discriminator.embedding_matrix
-    Xdis = dict(zip(index_node, dis_embedding_matrix))
     if config.app == "link_prediction":
         results_gen = model.lpe.evaluate_ne(model.train_test_split, Xgen, method=method_name + '_den_' + str(epoch),
                                            edge_embed_method=edge_embed_method)
-        results_dis = model.lpe.evaluate_ne(model.train_test_split, Xdis, method=method_name + '_dis_' + str(epoch),
-                                           edge_embed_method=edge_embed_method)
 
-        auc_gen, auc_dis = results_gen.test_scores.auroc(), results_dis.test_scores.auroc()
-        fscore_gen, fscore_dis = results_gen.test_scores.f_score(), results_dis.test_scores.f_score()
-        acc_gen, acc_dis = results_gen.test_scores.accuracy(), results_dis.test_scores.accuracy()
+        fscore_gen = results_gen.test_scores.f_score()
+        acc_gen = results_gen.test_scores.accuracy()
 
         return_val = fscore_gen
 
         if epoch == "pre_train":
             write_line = 'epoch: {e}\n ' \
-                         '\t gen:\t auc:{auc_g:.4f}\t f_score:{fscore_g:.4f}\t acc:{acc_g:.4f}\n' \
-                         '\t dis:\t auc:{auc_d:.4f}\t f_score:{fscore_d:.4f}\t acc:{acc_d:.4f}\n'.format(
-                e=epoch,
-                auc_g=auc_gen, fscore_g=fscore_gen, acc_g=acc_gen,
-                auc_d=auc_dis, fscore_d=fscore_dis, acc_d=acc_dis)
-
-            write_detail_gen = '\n\t auroc:{:.4f}\t f_score:{:.4f}\t acc:{:.4f}\n'.format(auc_gen, fscore_gen, acc_gen)
-            write_detail_dis = '\n\t auroc:{:.4f}\t f_score:{:.4f}\t acc:{:.4f}\n'.format(auc_dis, fscore_dis, acc_dis)
+                         '\t gen:\t f_score:{fscore_g:.4f}\t acc:{acc_g:.4f}\n'.format(
+                        e=epoch, fscore_g=fscore_gen, acc_g=acc_gen)
         else:
             write_line = 'epoch: {e}\n ' \
-                         '\t gen:\t auc:{auc_g:.4f}\t f_score:{fscore_g:.4f}\t acc:{acc_g:.4f}\n' \
-                         '\t dis:\t auc:{auc_d:.4f}\t f_score:{fscore_d:.4f}\t acc:{acc_d:.4f}\n'.format(
-                e=epoch,
-                auc_g=auc_gen, fscore_g=fscore_gen, acc_g=acc_gen,
-                auc_d=auc_dis, fscore_d=fscore_dis, acc_d=acc_dis)
-
-            write_detail_gen = '\t auroc:{:.4f}\t f_score:{:.4f}\t acc:{:.4f}\n'.format(auc_gen, fscore_gen, acc_gen)
-            write_detail_dis = '\t auroc:{:.4f}\t f_score:{:.4f}\t acc:{:.4f}\n'.format(auc_dis, fscore_dis, acc_dis)
+                         '\t gen:\t f_score:{fscore_g:.4f}\t acc:{acc_g:.4f}\n'.format(
+                        e=epoch, fscore_g=fscore_gen, acc_g=acc_gen)
 
         if not os.path.exists(config.results_path):
             os.makedirs(config.results_path)
         with open(config.results_filename, "a+") as fp:
             fp.writelines(write_line)
 
-        for i in range(2):
-            with open(config.train_detail_filename[i], "a+") as fp:
-                if i == 0:
-                    fp.writelines(write_detail_gen)
-                else:
-                    fp.writelines(write_detail_dis)
-
     elif config.app == "node_classification":
         results_gen = model.nce.evaluate_ne(Xgen, method_name=method_name + '_gen_' + str(epoch))
-        # results_dis = model.nce.evaluate_ne(Xdis, method_name=method_name + '_dis_' + str(epoch))
 
         for i in results_gen:
             i.params['eval_time'] = time.time()
@@ -304,4 +278,3 @@ def EvalEN(model, epoch, method_name, edge_embed_method='hadamard'):
         raise Exception('The task {} does not exist'.format(config.app))
 
     return return_val
-
