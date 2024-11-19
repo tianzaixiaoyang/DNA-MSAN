@@ -2,10 +2,7 @@ import torch
 import numpy as np
 import config
 import utils
-import random
-import time
 from model import DNA_MSAN
-from EvalNE.evalne.utils.viz_utils import *
 
 
 def show_progress(item_name, epoch, batch_index, batch_num, loss):
@@ -52,7 +49,7 @@ def D_step(model, optmizer):
             all_loss = all_loss + loss.detach().numpy()
             avg_loss = all_loss / (i + 1)
             show_progress('dis', d_epoch, i, len(start_list), avg_loss)
-    model.discriminator.embedding_matrix = utils.get_gnn_embeddings(model.discriminator.CAN, model.n_node)
+    model.discriminator.embedding_matrix = utils.get_gnn_embeddings(model.discriminator.MSAN, model.n_node)
 
 
 def G_step(model, optmizer):
@@ -73,8 +70,7 @@ def G_step(model, optmizer):
                                          node_neighbor_id=np.array(node_2[start:end]))
 
             prob = torch.sigmoid(score)
-            loss = model.generator.loss(prob=prob,
-                                       reward=reward[start:end])
+            loss = model.generator.loss(prob=prob, reward=reward[start:end])
 
             optimizer_G.zero_grad()
             loss.backward()
@@ -91,33 +87,24 @@ def train():
     optimizer_D = torch.optim.Adam(model.discriminator.parameters())
     optimizer_G = torch.optim.Adam(model.generator.parameters())
 
-    model.write_embeddings_to_file()
     max_val = utils.EvalEN(model, epoch="pre_train", method_name="DNA-MSAN")
 
     patience = 10
     count = 0
-    all_times = []
 
     print("start training...")
     for epoch in range(config.n_epochs):
         print(" epoch %d " % epoch)
 
         # D-steps
-        optimizer_D.param_groups[0]["lr"] = utils.adjust_learning_rate(org_lr=config.lr_dis,
-                                                                       epoch=epoch,
-                                                                       decay=0.01)
         D_step(model, optimizer_D)
 
         # G-steps
-        optimizer_G.param_groups[0]["lr"] = utils.adjust_learning_rate(org_lr=config.lr_gen,
-                                                                       epoch=epoch,
-                                                                       decay=0.06)
         G_step(model, optimizer_G)
 
         x = utils.EvalEN(model, epoch=epoch, method_name="DNA-MSAN")
         if x > max_val:
             max_val = x
-            model.write_embeddings_to_file()
             count = 0
         else:
             count += 1
