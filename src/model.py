@@ -6,11 +6,9 @@ logging.getLogger().setLevel(logging.ERROR)
 
 import tqdm
 import numpy as np
-import multiprocessing
 import collections
 import config
 import utils
-import pickle
 import Motif_Adjacency
 
 from scipy.stats import norm
@@ -60,10 +58,10 @@ class DNA_MSAN(object):
             self.train_test_split = EvalSplit()
 
             if os.path.exists(config.train_test_split + "trE_0_" + str(config.lp_train_frac) + ".csv"):
-            self.train_test_split.read_splits(config.train_test_split, 0,
-                                              nw_name=config.dataset,
-                                              directed=config.directed,
-                                              verbose=True)
+                self.train_test_split.read_splits(config.train_test_split, 0,
+                                                  nw_name=config.dataset,
+                                                  directed=config.directed,
+                                                  verbose=True)
             else:
                 train_e, train_e_false, test_e, test_e_false = self.train_test_split.compute_splits(
                        self.all_edges_G,
@@ -76,10 +74,12 @@ class DNA_MSAN(object):
             self.lpe = LPEvaluator(self.train_test_split, dim=config.n_emb)
 
             self.graph = utils.read_edges(config.train_test_split + "trE_0_" + str(config.lp_train_frac) + ".csv")
+            self.train_data = utils.read_edges_from_file(config.train_test_split + "trE_0_" + str(config.lp_train_frac) + ".csv")
 
         elif config.app == "node_classification":
 
             self.graph = utils.read_edges(config.new_edges_filename)
+            self.train_data = utils.read_edges_from_file(config.new_edges_filename)
 
             self.labels = pp.read_labels(config.labels_filename, delimiter=config.delimiter, idx_mapping=id_mapping)
             self.nce = NCEvaluator(self.all_edges_G, self.labels, nw_name=config.dataset, num_shuffles=5,
@@ -113,6 +113,15 @@ class DNA_MSAN(object):
         self.trees = None
         print("constructing BFS-trees with local graph softmax...")
         self.trees = self.construct_trees(self.root_nodes, config.BFS_depth)
+
+        #####  Using the improved MCNS method for negative sampling  #####
+        G = utils.construct_graph(self.train_data)
+        self.q_1_dict, mask = utils.load_item_pop(self.train_data)
+
+        # DFS for each node to generate markov chain
+        print("generating markov chain by DFS......")
+        self.candidates = candidate_choose(G, mask, walks_num=100)
+        #####  Using the improved MCNS method for negative sampling  #####
 
     def construct_trees(self, nodes, d):
         trees = {}
@@ -256,24 +265,68 @@ class DNA_MSAN(object):
                 pairs.append([center_node, node])
         return pairs
 
-    def write_embeddings_to_file(self):
-        """write embeddings of the generator and the discriminator to files"""
+    def new_mcns_negative_sampling(self, center_node, pos_nodes, candidates, q_1_dict, N_steps=10):
+        distribution = norm.pdf(np.arange(0, 100, 1), 50, 10)
+        distribution = [i / np.sum(distribution) for i in distribution]
 
-        modes = [self.generator, self.discriminator]
-        if not os.path.exists(config.results_path):
-            os.makedirs(config.results_path)
-        for i in range(2):
-            if i == 0:
-                embedding_matrix = modes[i].embedding_matrix.detach().numpy()
+        start = pos_nodes
+
+        count = 0
+        cur_state = start
+        user_list = [center_node] * len(cur_state)
+        generate_examples = list()
+        while True:
+            y_list = list()
+            q_probs_list = list()
+            q_probs_next_list = list()
+            count += 1
+
+            sample_num = np.random.random()
+            if sample_num < 0.5:
+                y_list = np.random.choice(list(q_1_dict.keys()), len(cur_state), p=list(q_1_dict.values()))
+                q_probs_list = [q_1_dict[i] for i in y_list]
+                q_probs_next_list = [q_1_dict[i] for i in cur_state]
             else:
-                embedding_matrix = modes[i].embedding_matrix
-            index = np.array(range(self.n_node)).reshape(-1, 1)
-            embedding_matrix = np.hstack([index, embedding_matrix])
-            embedding_list = embedding_matrix.tolist()
-            embedding_str = [str(int(emb[0])) + "\t" + "\t".join([str(x) for x in emb[1:]]) + "\n"
-                             for emb in embedding_list]
-            if not os.path.exists(config.results_path):
-                os.makedirs(config.results_path)
-            with open(config.emb_filenames[i], "w+") as f:
-                lines = [str(self.n_node) + "\t" + str(config.n_emb) + "\n"] + embedding_str
-                f.writelines(lines)
+                for i in cur_state:
+                    if len(candidates[i]) == 100:
+                        y = np.random.choice(candidates[i], 1, p=distribution)[0]
+                        y_list.append(y)
+                        index = candidates[i].index(y)
+                        q_probs = distribution[index]
+                        q_probs_list.append(q_probs)
+                        node_list_next = candidates[y]
+                        if i in node_list_next:
+                            index_next = node_list_next.index(i)
+                            q_probs_next = distribution[index_next]
+                        else:
+                            q_probs_next = q_1_dict[i]
+                    else:
+                        y = np.random.choice(list(q_1_dict.keys()), 1, p=list(q_1_dict.values()))[0]
+                        y_list.append(y)
+                        q_probs_next = q_1_dict[i]
+                        q_probs_list.append(q_1_dict[y])
+                    q_probs_next_list.append(q_probs_next)
+
+            u = np.random.rand()
+            p_probs = self.discriminator.get_probs(user_list, y_list)
+            p_probs_next = self.discriminator.get_probs(user_list, cur_state)
+
+            A_a_list = np.multiply(np.array(p_probs), np.array(q_probs_next_list)) / np.multiply(np.array(p_probs_next),
+                                                                                                 np.array(q_probs_list))
+            next_state = list()
+
+            for i in range(len(cur_state)):
+                A_a = A_a_list[i]
+                alpha = min(1, A_a)
+                if u < alpha:
+                    next_state.append(y_list[i])
+                else:
+                    next_state.append(cur_state[i])
+            cur_state = next_state
+
+            if count > N_steps:
+                for i in cur_state:
+                    generate_examples.append(i)
+                break
+
+        return generate_examples
