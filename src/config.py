@@ -33,7 +33,7 @@ lp_train_frac = 0.7  # The training ratio for link prediction
 BFS_depth = 2
 
 # project path
-project_path = "D:/DNA-MSAN/"
+project_path = "home/teach/DNA-MSAN/"
 
 # The paths to the original edge set, attribute matrix, and labels.
 org_edges_filename = project_path + "data/" + dataset + "/" + dataset + ".cites"
