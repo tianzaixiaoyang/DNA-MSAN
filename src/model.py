@@ -22,7 +22,6 @@ from src.EvalNE.evalne.evaluation.evaluator import NCEvaluator
 from src.EvalNE.evalne.evaluation.score import Scoresheet
 from src.EvalNE.evalne.evaluation.split import EvalSplit
 from src.EvalNE.evalne.utils import split_train_test as stt
-from src.EvalNE.evalne.utils.viz_utils import *
 
 
 class DNA_MSAN(object):
